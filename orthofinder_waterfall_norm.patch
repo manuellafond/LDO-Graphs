@@ -1,0 +1,24 @@
+--- a/src/orthofinder/tools/waterfall.py	2026-10-13 13:15:54.763331807 -0400
++++ b/src/orthofinder/tools/waterfall.py	2026-10-13 13:31:12.427310818 -0400
+@@ -103,8 +103,21 @@
+         )
+         Lf = Li * Lj
+         topLf, topScores = scnorm.GetTopPercentileOfScores(Lf, scores, 95)
++        # PATCH (SwissTree evaluation; inactive unless the env vars are set):
++        #   OF_NORM_LOG=file      append "i j n_hits b a" for every fitted species pair
++        #   OF_NORM_MIN=n         fit only species pairs with >= n hits ...
++        #   OF_NORM_PARAMS=b,a    ... and normalise the others with these fixed parameters instead of dropping them
++        _min = int(os.environ.get("OF_NORM_MIN", "2"))
++        _fixed = os.environ.get("OF_NORM_PARAMS")
++        if _fixed and len(scores) > 0 and len(topScores) < _min:
++            return scnorm.NormaliseScoresByLogLengthProduct(
++                B, Lengths[iSpecies], Lengths[jSpecies], [float(x) for x in _fixed.split(",")]
++            )
+         if len(topScores) > 1:
+             fittingParameters = scnorm.CalculateFittingParameters(topLf, topScores)
++            if os.environ.get("OF_NORM_LOG"):
++                with open(os.environ["OF_NORM_LOG"], "a") as _fh:
++                    _fh.write(f"{iSpecies}\t{jSpecies}\t{len(topScores)}\t{fittingParameters[0]}\t{fittingParameters[1]}\n")
+             return scnorm.NormaliseScoresByLogLengthProduct(
+                 B, Lengths[iSpecies], Lengths[jSpecies], fittingParameters
+             )
