@@ -1,0 +1,1 @@
+Maximum likelihood phylogeny of metazoan representative family members with fungal orthologs as outgroup. The phylogenetic tree was reconstructed with PhyML: JTT, discrete gamma model(8 categories), gamma shape parameter estimated (1.230), invariable sites estimated (0.057), aLRT Chi2 based parametric branch support values are given at all nodes.

@@ -1,0 +1,6 @@
+Bayesian MCMC phylogeny of all selected family members (MrBayes. JTT, gamma 4, 1.000.000 generations, 4 chains, 2 independent runs; burnin=160.000).
+
+Topology and support: All gene duplication events supported significantly; not supported are topological variations between species nodes for MONDO/ORNAN and within teleostei.
+
+
+

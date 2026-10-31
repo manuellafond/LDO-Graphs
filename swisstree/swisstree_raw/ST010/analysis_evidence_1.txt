@@ -1,0 +1,6 @@
+Evidence 1: Subfamilies 1, 2, 1/2, 4
+
+Alignment: mafft (einsi, JTT200)
+Data model: manual (man3)
+Evol model: JTT +G +F
+RAxML: 1000 bt, model parameters optimized

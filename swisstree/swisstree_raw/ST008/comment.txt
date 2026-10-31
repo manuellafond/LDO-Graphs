@@ -1,0 +1,6 @@
+Most analyzed species possess a single Bambi homolog. The evolutionary rate is generally low (OrthoDB Metazoa: 0.89). Due to high sequence conservation, the topology of phylogenetic trees can differ from the species tree; branch support values are mostly below significance. 1:1 homologs are most probably orthologs. This assumption is supported by gene synteny.
+
+The analyzed dataset includes two proteomes with two gene copies. Likelihood analyses with differing data models show a consistent tree topology at duplication nodes:
+
+    Danio rerio (DANRE): gene duplication likely occurred prior to the divergence of Danio from other teleostei. Evidence: consistent tree topology; gene synteny.
+    Trichinella spiralis (Trichina worm, TRISP): the gene duplication is lineage-specific in our data set. Evidence: Branch support: 1.

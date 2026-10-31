@@ -1,0 +1,1 @@
+1:1 homologs are assumed to be orthologs and xenologs, respectively. The data inlcudes only recent gene duplications.

@@ -1,0 +1,3 @@
+Neighbor-joining consensus tree from 1000 bootstrap replicates for eukaryotic family representatives, performed with BioNJ, substitution model JTT.
+
+Topology and support: Bootstrap support values are significant for all clades and the gene duplication node splitting the vertebrate POP2 and POP3 clades.

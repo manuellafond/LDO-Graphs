@@ -1,0 +1,3 @@
+Alignment: MAFFT 7, L-INS-i
+Datamodel: manual, 240 aa
+Tree building: PhyML, JTT,G(8),I, aLRT-SH

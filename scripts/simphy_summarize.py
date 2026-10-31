@@ -18,12 +18,18 @@ import re
 
 from ldo_utils import prf
 
-LDO_ORDER = ["none", "count", "count+sparse", "count+sparse+age"]
-OF_ORDER = ["pooled", "perfam", "perfam_fixnorm"]
+LDO_ORDER = ["none", "count", "count+sparse", "count+sparse+age", "count+sparse+mutual", "count+sparse+mutual+age"]
+OF_ORDER = ["pooled", "pooled_fixnorm", "perfam", "perfam_fixnorm"]
 NAMES = {"ldo_none": "LDO, no repair", "ldo_count": "LDO, count", "ldo_count+sparse": "LDO, count+sparse",
          "ldo_count+sparse+age": "LDO, count+sparse, age test (--count-age 1.0)",
-         "of_pooled": "OrthoFinder, pooled per replicate", "of_perfam": "OrthoFinder, per family",
+         "ldo_count+sparse+mutual": "LDO, count+sparse+mutual",
+         "ldo_count+sparse+mutual+age": "**LDO+check** (paper): count+sparse+mutual, age test",
+         "of_pooled": "OrthoFinder, pooled per replicate",
+         "of_pooled_fixnorm": "**OrthoFinder** (paper): pooled, patched normalisation",
+         "of_perfam": "OrthoFinder, per family",
          "of_perfam_fixnorm": "OrthoFinder, per family, patched normalisation"}
+BIN_METHODS = ["ldo_count+sparse+mutual+age", "of_pooled_fixnorm", "of_pooled"]   # methods shown by family size
+BINS = [(2, 10), (11, 25), (26, 50), (51, 100), (101, 200), (201, None)]          # genes per family
 
 
 # Short name of a simphy setting folder.
@@ -115,7 +121,7 @@ def main():
     L.append("")
     L += table(lambda r: True, "Ortholog pairs, all families",
                "Each method on all the families it was run on (per-family OrthoFinder may cover a subset only).")
-    # Markdown table of per-family average precision / recall, one line per method, one column per setting.
+    # Markdown table of per-family average precision / recall / F1, one line per method, one column per setting.
     #   keep    function of a row of `rows` -> True if the row is counted
     #   title   section title
     #   note    sentence printed under the title
@@ -127,11 +133,11 @@ def main():
         for m in methods:
             cells, n = [], 0
             for s in settings + [None]:
-                v = [(r[6] / r[5] if r[5] else 1.0, r[6] / r[4]) for r in rows
+                v = [prf(r[4], r[5], r[6]) for r in rows
                      if r[3] == m and (s is None or r[0] == s) and r[4] > 0 and keep(r)]
                 if s is None:
                     n = len(v)
-                cells.append(f"{sum(x[0] for x in v) / len(v):.3f} / {sum(x[1] for x in v) / len(v):.3f}" if v else "-")
+                cells.append(" / ".join(f"{sum(x[i] for x in v) / len(v):.3f}" for i in range(3)) if v else "-")
             L.append(f"| {NAMES.get(m, m)} | {n} | " + " | ".join(cells) + " |")
         return L
 
@@ -142,13 +148,36 @@ def main():
         L += table(lambda r: (r[0], r[1], r[2]) in pf, "Ortholog pairs, families with per-family OrthoFinder runs",
                    f"All methods restricted to the {len(pf)} families that have per-family OrthoFinder results.")
     L.append("")
-    L += macro_table(lambda r: True, "Average per family (precision / recall)",
+    L += macro_table(lambda r: True, "Average per family (precision / recall / F1)",
                      "Each family scored on its own, then averaged; families without any ortholog pair (all genes in "
                      "one species) are left out for every method. A family with no predicted pair counts as precision 1.")
     if pf and pf != allf:
         L.append("")
         L += macro_table(lambda r: (r[0], r[1], r[2]) in pf, "Average per family, families with per-family OrthoFinder runs",
                          "As above, restricted to the families with per-family OrthoFinder results.")
+    # Pooled precision / recall / F1 by family size (genes per family), on the families scored by all these methods.
+    bm = [m for m in BIN_METHODS if m in methods]
+    if bm and info:
+        per = {}
+        for r in rows:
+            if r[3] in bm:
+                per.setdefault((r[0], r[1], r[2]), {})[r[3]] = r[4:]
+        fams = {k: v for k, v in per.items() if len(v) == len(bm) and k in info}
+        L += ["", "## Ortholog pairs by family size (precision / recall / F1)", "",
+              f"Gene pairs pooled within each bin of genes per family; the {len(fams)} families scored by every method "
+              "shown.", "",
+              "| Genes per family | families | true pairs | " + " | ".join(NAMES.get(m, m) for m in bm) + " |",
+              "|---|---|---|" + "---|" * len(bm)]
+        for lo, hi in BINS:
+            keep = [k for k in fams if info[k][0] >= lo and (hi is None or info[k][0] <= hi)]
+            truth = sum(fams[k][bm[0]][0] for k in keep)
+            cells = []
+            for m in bm:
+                t = sum(fams[k][m][0] for k in keep); p_ = sum(fams[k][m][1] for k in keep)
+                tp = sum(fams[k][m][2] for k in keep)
+                cells.append("{:.3f} / {:.3f} / {:.3f}".format(*prf(t, p_, tp)) if keep else "-")
+            lab = f"{lo}-{hi}" if hi else f"> {lo - 1}"
+            L.append(f"| {lab} | {len(keep)} | {truth} | " + " | ".join(cells) + " |")
     if clus:
         L += ["", "## Clusters (LDO trees)", "",
               "Cluster precision (exact + polytomy) / recall (reference clusters other than nested duplications), "

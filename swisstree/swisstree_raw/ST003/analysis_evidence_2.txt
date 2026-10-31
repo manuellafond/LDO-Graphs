@@ -1,0 +1,4 @@
+Maximum likelihood phylogeny of chordate family members (arthopods as outgroup) with aLRT Chi2 branch support statistics for each node performed with PhyML, substitution model WAG, discrete gamma model (8 categories), gamma shape parameter estimated (0.494).
+
+
+

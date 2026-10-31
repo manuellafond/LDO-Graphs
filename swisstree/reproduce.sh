@@ -32,6 +32,10 @@ mkdir -p "$OUT/eval" "$OUT/logs"
 cd "$OUT"
 export PYTHONDONTWRITEBYTECODE=1
 
+# On any failure, say where it stopped and show the end of the most recent log (the steps write their output there).
+trap 'echo "FAILED (line $LINENO of $(basename "$0")); end of the most recent log, $(ls -t "$OUT"/logs/* 2>/dev/null | head -1):" >&2;
+      tail -n 15 "$(ls -t "$OUT"/logs/* 2>/dev/null | head -1)" >&2 2>/dev/null' ERR
+
 # Progress message with the time.
 step() { echo "== $(date +%H:%M:%S) $*"; }
 
@@ -75,17 +79,20 @@ for d in st stf; do
   # Predicted LDO graph of every family: for each gene, the closest gene of every other species.
   $PY $S/predict_ldo.py --trees $d/trees --out $d/pred > logs/predict_$d.log 2>&1
   # Gene trees from the graphs with each repair setting, then scoring.
-  for r in none count count+sparse; do
+  for r in none count count+sparse count+sparse+mutual; do
     $PY $S/ldo_builder.py --graph $d/pred/ldo_edges.tsv --genes $d/pred/genes.tsv --species-tree $d/species_tree.nwk \
         --repair $r --trees-out $d/trees_$r.txt > logs/builder_${d}_$r.log 2>&1
     evaluate_ldo $d/trees_$r.txt ldo_${tag}_$r $d
   done
-  # count+sparse with the duplication-age test of the count repair (developed on the simphy simulations); it reads
-  # the alignments in <d>/trees/.
-  $PY $S/ldo_builder.py --graph $d/pred/ldo_edges.tsv --genes $d/pred/genes.tsv --species-tree $d/species_tree.nwk \
-      --repair count+sparse --count-age 1.0 --seqs-trees $d/trees --trees-out $d/trees_count+sparse+age.txt \
-      > logs/builder_${d}_count+sparse+age.log 2>&1
-  evaluate_ldo $d/trees_count+sparse+age.txt ldo_${tag}_count+sparse+age $d
+  # With the duplication-age test of the count repair (developed on the simphy simulations); it reads the
+  # alignments in <d>/trees/. count+sparse+mutual+age is LDO+check, the method of the paper (on SwissTree the mutual
+  # repair never applies, so it gives the same trees as count+sparse+age).
+  for r in count+sparse count+sparse+mutual; do
+    $PY $S/ldo_builder.py --graph $d/pred/ldo_edges.tsv --genes $d/pred/genes.tsv --species-tree $d/species_tree.nwk \
+        --repair $r --count-age 1.0 --seqs-trees $d/trees --trees-out $d/trees_$r+age.txt \
+        > logs/builder_${d}_$r+age.log 2>&1
+    evaluate_ldo $d/trees_$r+age.txt ldo_${tag}_$r+age $d
+  done
 done
 
 # ---------------------------------------------------------------- 4. OrthoFinder

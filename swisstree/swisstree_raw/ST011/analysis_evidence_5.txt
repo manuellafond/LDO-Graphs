@@ -1,0 +1,6 @@
+Evidence 5: Gene duplication BAM3 a/b, Populus trichocarpa (node 9)
+
+Alignment: mafft (G-INS-i, BLOSUM62)
+Data model: manual (man1)
+Evol model: LG +G(8)
+PhyML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.

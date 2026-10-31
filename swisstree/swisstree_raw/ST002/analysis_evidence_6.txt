@@ -1,0 +1,1 @@
+Neighbor-joining consensus tree from 1000 bootstrap replicates for eukaryotic representatives, performed with BioNJ using the substitution model JTT.

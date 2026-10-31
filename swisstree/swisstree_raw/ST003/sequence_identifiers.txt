@@ -1,0 +1,49 @@
+VATB_AEDAE Aedes aegypti Q9XYC8
+VATB_ANOGA Anopheles gambiae Q6VFB0
+VATB_APIME Apis mellifera 551721
+VATB_ASPFU Aspergillus fumigatus Q4X0J7
+VATB_BOMMO Bombyx mori BGIBMGA002241
+VATB_CANAL Candida albicans Q59PT0
+VATB_CHLRE Chlamydomonas reinhardtii 126382
+VATB_CIOIN Ciona intestinalis ENSCING00000006707
+VATB_CIOSA Ciona savignyi ENSCSAVG00000007536
+VATB_CRYNE Cryptococcus neoformans Q5KBW0
+VATB_DAPPU Daphnia pulex 306451
+VATB_DEBHA Debaryomyces hansenii Q6BNG9
+VATB_DICDI Dictyostelium discoideum Q76NU1
+VATB_DROME Drosophila melanogaster P31409
+VATB_ENCCU Encephalitozoon cuniculi Q8SR34
+VATB_GIALA Giardia lamblia A8BPV3
+VATB_IXOSC Ixodes scapularis B7QDF5, ISCW022132
+VATB_KLULA Kluyveromyces lactis Q6CRG9
+VATB_LEIMA Leishmania major Q4Q821
+VATB_NEUCR Neurospora crassa P11593
+VATB_PRIPA Pristionchus pacificus WBGene00108325
+VATB_SCHPO Schizosaccharomyces pombe P31411
+VATB_USTMA Ustilago maydis Q4PE45
+VATB_YEAST Saccharomyces cerevisiae P16140
+VATB1_ARATH Arabidopsis thaliana P11574
+VATB1_CAEBR Caenorhabditis briggsae WBGene00034889
+VATB1_CAEEL Caenorhabditis elegans Q19626
+VATB1_HUMAN Homo sapiens P15313
+VATB1_MACMU Macaca mulatta ENSMMUG00000002090
+VATB1_MOUSE Mus musculus Q91YH6, Q99KA3
+VATB1_PHYPA Physcomitrella patens A9SP56, 214369
+VATB1_RAT Rattus norvegicus ENSRNOG00000013573
+VATB1_TRYCR Trypanosoma cruzi Tc00.1047053506025.50
+VATB1_XENTR Xenopus tropicalis B0BMI3, ENSXETG00000021532
+VATB2_ANOCA Anolis carolinensis ENSACAG00000001266
+VATB2_ARATH Arabidopsis thaliana Q9SZN1
+VATB2_CAEBR Caenorhabditis briggsae A8XBU8
+VATB2_CAEEL Caenorhabditis elegans Q9N5A0
+VATB2_CHICK Gallus gallus Q9I8A2
+VATB2_HUMAN Homo sapiens P21281
+VATB2_MACMU Macaca mulatta ENSMMUG00000020000
+VATB2_MOUSE Mus musculus P62814, B0LAC8
+VATB2_ORNAN Ornithorhynchus anatinus ENSOANG00000010576
+VATB2_PHYPA Physcomitrella patens A9SJK8, 106587
+VATB2_RAT Rattus norvegicus P62815
+VATB2_TRYCR Trypanosoma cruzi Tc00.1047053511209.10
+VATB2_XENTR Xenopus tropicalis Q0VGW2
+VATB3_ARATH Arabidopsis thaliana Q8W4E2, Q9LN19
+VATB3_PHYPA Physcomitrella patens A9U1T3, 173198

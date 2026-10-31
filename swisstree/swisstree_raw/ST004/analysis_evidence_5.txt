@@ -1,0 +1,1 @@
+Testing the robustness of tree topology with 1000 replicates from the same dataset using BioNJ, substitution model JTT. Topology: significant support of duplication nodes, topology is consistent with the PhyML analysis above.

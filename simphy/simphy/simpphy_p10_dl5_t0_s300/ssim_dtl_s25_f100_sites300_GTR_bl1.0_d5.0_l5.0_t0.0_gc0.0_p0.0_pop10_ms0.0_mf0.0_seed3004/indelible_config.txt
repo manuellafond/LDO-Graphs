@@ -1,0 +1,8 @@
+[TYPE] NUCLEOTIDE 1
+[SETTINGS] [fastaextension] fasta
+[SIMPHY-UNLINKED-MODEL] modelA 
+  [submodel] GTR $(rd:16,3,5,5,6,15) // GTR with rates from a Dirichlet  
+  [statefreq] $(d:36,26,28,32)  // frequencies for T C A G sampled from a Dirichlet 
+[rates] 0 $(e:2) 0 // Site-specific rate heterogeneities: 0 p-inv, alpha from an E(2) and using a continuous gamma distribution.
+[SIMPHY-PARTITIONS] simple [1.0 modelA $(sl:0,0.25,290.7699703429032)]
+[SIMPHY-EVOLVE] 1 dataset 

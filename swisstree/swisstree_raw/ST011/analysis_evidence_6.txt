@@ -1,0 +1,6 @@
+Evidence 6: Independent gene duplications of BAM7 a/b in Arabidopsis lyrata subsp. lyrata, Glycine max, Populus trichocarpa (nodes 25, 26, 27)
+
+Alignment: mafft (E-INS-i, BLOSUM62)
+Data model: manual (man1)
+Evol model: LG +G
+RAxML: Best-scoring ML tree, model parameters optimized, branch support values from 100 rapid bootstraps.

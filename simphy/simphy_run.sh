@@ -9,15 +9,21 @@
 # simpphy_p10_dl1_t0_s300/ssim_..._seed3001/1). Results go to OUT/<setting>/<seedNNNN>/, the report to OUT/summary.md.
 #
 # Environment variables:
-#   OF_MODES   OrthoFinder runs to do, any of: pooled perfam perfam_fixnorm   (default: "pooled"; "" = no OrthoFinder)
+#   OF_MODES   OrthoFinder runs to do, any of: pooled pooled_fixnorm perfam perfam_fixnorm
+#              (default: "pooled pooled_fixnorm"; "" = no OrthoFinder)
 #              pooled         one run per replicate with all its families (gene ids are made unique per family)
+#              pooled_fixnorm the pooled run re-analysed (no new search) with the patched normalisation: species pairs
+#                             with < 30 hits use the median parameters fitted on the other pairs. This is the
+#                             OrthoFinder baseline of the paper (needs "pooled")
 #              perfam         one run per family (unpatched normalisation)
 #              perfam_fixnorm one run per family, species pairs with < 30 hits normalised with the median parameters
 #                             fitted in the pooled run of the same replicate (needs "pooled" too)
 #   PERFAM_FAMILIES  families for the per-family runs, e.g. 1-10 (default: all; ~15 s per family per variant)
 #   JOBS       parallel per-family OrthoFinder runs (default 2), THREADS threads for the pooled run (default 2)
-#   REPAIRS    ldo_builder.py --repair settings (default "none count count+sparse")
-#   COUNT_AGE  also run count+sparse with --count-age COUNT_AGE (default 1.0; "" = skip), reported as count+sparse+age
+#   REPAIRS    ldo_builder.py --repair settings (default "none count count+sparse count+sparse+mutual")
+#   COUNT_AGE  also run count+sparse and count+sparse+mutual with --count-age COUNT_AGE (default 1.0; "" = skip),
+#              reported as count+sparse+age and count+sparse+mutual+age. count+sparse+mutual+age is LDO+check, the
+#              method of the paper.
 #   ONLY       regular expression: only replicates whose path matches it
 set -euo pipefail
 
@@ -26,11 +32,53 @@ ROOT=$(realpath "$1")
 OUT=$(realpath -m "${2:-simphy_out}")
 S=$(cd "$(dirname "$0")/.." && pwd)/scripts
 PY=${PY:-python3}; OF=${OF:-orthofinder}
-OF_MODES=${OF_MODES-pooled}; JOBS=${JOBS:-2}; T=${THREADS:-2}
-REPAIRS=${REPAIRS:-"none count count+sparse"}
+OF_MODES=${OF_MODES-"pooled pooled_fixnorm"}; JOBS=${JOBS:-2}; T=${THREADS:-2}
+REPAIRS=${REPAIRS:-"none count count+sparse count+sparse+mutual"}
 COUNT_AGE=${COUNT_AGE-1.0}
 export PYTHONDONTWRITEBYTECODE=1
 mkdir -p "$OUT"
+
+# LDO reconstruction + scoring of one replicate, run inside its folder, for each repair setting of REPAIRS and, with
+# COUNT_AGE, count+sparse+age and count+sparse+mutual+age: trees (ldo_trees_<r>.txt), ortholog pairs (eval/ldo_<r>.tsv)
+# and clusters (eval/clusters_<r>.tsv). Settings whose eval/ldo_<r>.tsv already exists are skipped, so that a finished
+# replicate can be completed with new settings without recomputing anything else.
+ldo_runs() {
+  local r base
+  for r in $REPAIRS ${COUNT_AGE:+count+sparse+age count+sparse+mutual+age}; do
+    [ -s eval/ldo_$r.tsv ] && continue
+    base=${r%+age}
+    if [ "$base" = "$r" ]; then
+      $PY $S/ldo_builder.py --graph pred/ldo_edges.tsv --genes pred/genes.tsv --species-tree species_tree.nwk \
+          --repair $r --trees-out ldo_trees_$r.txt > logs/builder_$r.log 2>&1 || return 1
+    else    # duplication-age test of the count repair (alignment distances from trees/, Jukes-Cantor on DNA)
+      $PY $S/ldo_builder.py --graph pred/ldo_edges.tsv --genes pred/genes.tsv --species-tree species_tree.nwk \
+          --repair $base --count-age $COUNT_AGE --seqs-trees trees --model jc --trees-out ldo_trees_$r.txt \
+          > logs/builder_$r.log 2>&1 || return 1
+    fi
+    $PY $S/evaluate_orthologs.py --trees ldo_trees_$r.txt --truth ldo/orthologs.tsv --out eval/tmp > logs/eval_ldo_$r.log || return 1
+    cp eval/tmp/per_family.tsv eval/ldo_$r.tsv || return 1
+    $PY $S/cluster_analysis.py --pred ldo_trees_$r.txt --true-trees trees --out eval/clusters_$r.tsv > logs/clusters_$r.log || return 1
+    rm -rf eval/tmp
+  done
+}
+
+# Pooled OrthoFinder run re-analysed with the patched normalisation (OF_MODES pooled_fixnorm), run inside the replicate
+# folder after the pooled run: no new search (-b), the pairs with < 30 hits use the median parameters of the pooled run
+# (of_out/norm_params.txt). Writes eval/of_pooled_fixnorm.tsv; skipped if it exists or if the pooled run is missing.
+of_pooled_fixnorm() {
+  [ -s eval/of_pooled_fixnorm.tsv ] && return 0
+  local W NORM
+  W=$(ls -d of_out/pooled/Results_*/WorkingDirectory 2>/dev/null | head -1)
+  NORM=$(cat of_out/norm_params.txt 2>/dev/null || true)
+  if [ -z "$W" ] || [ -z "$NORM" ]; then echo "  pooled_fixnorm skipped: needs the pooled run"; return 0; fi
+  rm -rf $W/OrthoFinder/Results_fixnorm30
+  OF_NORM_MIN=30 OF_NORM_PARAMS=$NORM $OF -b $W -s of_in/pooled.sp.nwk -n fixnorm30 -d -X -t $T -a $T \
+      > logs/of_pooled_fixnorm.log 2>&1 || return 1
+  $PY $S/evaluate_orthofinder.py --truth ldo/orthologs.tsv --genes ldo/genes.tsv --run $W/OrthoFinder/Results_fixnorm30 \
+      --label pooled_fixnorm --per-family eval/of_pooled_fixnorm.tsv > logs/eval_of_pooled_fixnorm.log || return 1
+}
+export -f ldo_runs of_pooled_fixnorm
+export PY S OF T REPAIRS COUNT_AGE
 
 # The replicates: every folder under ROOT that contains s_tree.trees (filtered by ONLY), in sorted order.
 mapfile -t RUNS < <(find "$ROOT" -name s_tree.trees -printf '%h\n' | sort | grep -E "${ONLY:-.}")
@@ -42,8 +90,14 @@ for RUN in "${RUNS[@]}"; do
   setting=$(echo "$rel" | cut -d/ -f1)
   seed=$(echo "$rel" | grep -o 'seed[0-9]*' | head -1)
   W="$OUT/$setting/$seed"
-  # A replicate finished in an earlier run (it has a 'done' file) is skipped; an unfinished one is redone from scratch.
-  if [ -e "$W/done" ]; then echo "skip $setting/$seed (done)"; continue; fi
+  # A replicate finished in an earlier run (it has a 'done' file) is not recomputed: only the LDO settings and the
+  # patched pooled OrthoFinder analysis it does not have yet are added. An unfinished one is redone from scratch.
+  if [ -e "$W/done" ]; then
+    echo "== $(date +%H:%M:%S) $setting/$seed (done; adding missing results)"
+    ( cd "$W" && ldo_runs && { [[ " $OF_MODES " != *" pooled_fixnorm "* ]] || of_pooled_fixnorm; } ) \
+      || { echo "  FAILED $setting/$seed (see $W/logs)"; echo "$setting/$seed" >> "$OUT/failed.txt"; }
+    continue
+  fi
   echo "== $(date +%H:%M:%S) $setting/$seed"
   rm -rf "$W"; mkdir -p "$W/eval" "$W/logs"
   # one replicate, in a background subshell so that set -e applies inside it (bash ignores set -e in a
@@ -58,26 +112,8 @@ for RUN in "${RUNS[@]}"; do
   $PY $S/true_orthologs.py --trees trees --out ldo > logs/true_orthologs.log 2>&1
   # 3. predicted LDO graph (Jukes-Cantor distance, DNA)
   $PY $S/predict_ldo.py --trees trees --out pred --model jc > logs/predict.log 2>&1
-  # 4. reconstruction + scoring, for each repair setting: trees (ldo_trees_<r>.txt), ortholog pairs (eval/ldo_<r>.tsv)
-  #    and clusters (eval/clusters_<r>.tsv)
-  for r in $REPAIRS; do
-    $PY $S/ldo_builder.py --graph pred/ldo_edges.tsv --genes pred/genes.tsv --species-tree species_tree.nwk \
-        --repair $r --trees-out ldo_trees_$r.txt > logs/builder_$r.log 2>&1
-    $PY $S/evaluate_orthologs.py --trees ldo_trees_$r.txt --truth ldo/orthologs.tsv --out eval/tmp > logs/eval_ldo_$r.log
-    cp eval/tmp/per_family.tsv eval/ldo_$r.tsv
-    $PY $S/cluster_analysis.py --pred ldo_trees_$r.txt --true-trees trees --out eval/clusters_$r.tsv > logs/clusters_$r.log
-  done
-  # count+sparse with the duplication-age test of the count repair (--count-age, uses the alignments in trees/),
-  # scored the same way
-  if [ -n "$COUNT_AGE" ]; then
-    r=count+sparse+age
-    $PY $S/ldo_builder.py --graph pred/ldo_edges.tsv --genes pred/genes.tsv --species-tree species_tree.nwk \
-        --repair count+sparse --count-age $COUNT_AGE --seqs-trees trees --model jc --trees-out ldo_trees_$r.txt > logs/builder_$r.log 2>&1
-    $PY $S/evaluate_orthologs.py --trees ldo_trees_$r.txt --truth ldo/orthologs.tsv --out eval/tmp > logs/eval_ldo_$r.log
-    cp eval/tmp/per_family.tsv eval/ldo_$r.tsv
-    $PY $S/cluster_analysis.py --pred ldo_trees_$r.txt --true-trees trees --out eval/clusters_$r.tsv > logs/clusters_$r.log
-  fi
-  rm -rf eval/tmp
+  # 4. reconstruction + scoring, for each repair setting (see ldo_runs above)
+  ldo_runs
 
   # 5. OrthoFinder (DNA: -d -S blastn; true species tree -s)
   # How OrthoFinder is used, and why the comparison is as fair as we could make it:
@@ -113,6 +149,8 @@ for RUN in "${RUNS[@]}"; do
     NORM=$($PY $S/fit_norm_params.py of_out/normfit.tsv --min-hits 30 2>/dev/null || true)
     echo "$NORM" > of_out/norm_params.txt
   fi
+  # The pooled run re-analysed with the patched normalisation (the OrthoFinder baseline of the paper).
+  if [[ " $OF_MODES " == *" pooled_fixnorm "* ]]; then of_pooled_fixnorm; fi
   # Per-family runs (perfam, perfam_fixnorm): one OrthoFinder run per family.
   if [[ " $OF_MODES " == *" perfam"* ]]; then
     # The families to run: those of PERFAM_FAMILIES (e.g. "1-10,15"; empty = all) that have >= 2 species.

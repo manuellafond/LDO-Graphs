@@ -1,0 +1,1 @@
+Maximum likelihood phylogeny of eukaryotic representative family members with plant orthologs as outgroup. The phylogenetic tree was reconstructed with PhyML: WAG, discrete gamma model (8 categories), gamma shape parameter estimated (1.272), aLRT SH branch support values are given at all nodes.

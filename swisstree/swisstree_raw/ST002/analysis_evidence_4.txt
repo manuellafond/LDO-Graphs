@@ -1,0 +1,1 @@
+Maximum likelihood phylogeny of vertebrate NOX1, NOX2 and NOX3 genes with Ciona NOX123 as outgroup. The analysis was performed with PhyML: WAG, discrete gamma model (8 categories), gamma shape parameter estimated to be 1.112, aLRT SH branch support values are shown at all nodes.

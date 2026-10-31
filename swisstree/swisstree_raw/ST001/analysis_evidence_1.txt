@@ -1,0 +1,3 @@
+Maximum likelihood phylogeny of all eukaryotic representative family members (PhyML with the substitution model JTT, a discrete gamma model with 8 categories and the shape parameter estimated from the dataset (1.930), non-parametric branch support values are calculated with aLRT based on a Shimodaira-Hasegawa-like procedure).
+
+Topology and support: Branches are supported for the divergence node at the chordate split as well as for the vertebrate clades POP1, POP2, and POP3.

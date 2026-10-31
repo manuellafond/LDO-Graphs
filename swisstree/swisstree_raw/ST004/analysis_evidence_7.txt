@@ -1,0 +1,17 @@
+Teleostei SERC2a/b, gene synteny:
+
+    Paralogs share a conserved gene synteny, except for gene SERC2a of Danio
+
+(ENSDARG00000056532, ENSDARP00000026726).
+
+    Analysis of the gene regions of the conserved neighboring genes from Takifugu and
+
+Gasterosteus: for 2 of the 4 analyzed genes, Danio possesses an additional gene copy in comparison to the other 2 species.
+
+    For Danio, the unique 3’ neighborhood of SERC2a includes genes, which are located on the same
+
+chromosomes than the SERC genes. For Danio, the unique 3’ neighborhood of SERC2a includes the gene frt55, which has about 30-40 lineage-specific paralogs.
+
+    Conclusion: The gene relationship between the SERC2a gene of Danio and SERC2a of the other 2
+
+teleostei remains dubious. The gene Danio SERC2a was therefore removed from the reference tree.

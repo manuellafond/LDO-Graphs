@@ -1,0 +1,1 @@
+/home/manuel/git/SimPhy_1.0.2/bin/simphy_lnx32 -I simpphy_p10_dl0_t0_s300/ssim_dtl_s25_f100_sites300_GTR_bl1.0_d0.0_l0.0_t0.0_gc0.0_p0.0_pop10_ms0.0_mf0.0_seed3003/simphy_config.txt 

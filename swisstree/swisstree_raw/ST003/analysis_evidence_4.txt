@@ -1,0 +1,4 @@
+Neighbor-joining consensus tree from 1000 bootstrap replicates for eukaryotic family representatives, performed with BioNJ, substitution model JTT, assuming a discrete gamma model (4 categories).
+
+
+

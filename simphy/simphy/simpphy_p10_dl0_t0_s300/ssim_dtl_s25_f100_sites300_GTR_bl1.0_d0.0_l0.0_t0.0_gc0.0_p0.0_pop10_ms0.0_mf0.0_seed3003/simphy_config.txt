@@ -1,0 +1,31 @@
+// SPECIES TREE
+-RS 1 // number of replicates
+-sb f:5e-09
+-sd f:0
+-sl f:25
+-st ln:21.25,0.2
+-su ln:-21.9,0.1
+-gd f:0.0
+-gb f:0.0
+-gt f:0.0
+-gg f:0.0
+-ld sl:0.0,1.0,gd
+-lb f:ld
+-lt sl:0.0,1.0,gt
+-lg f:gg
+-lk 0
+// POPULATION
+-SP f:10
+// LOCUS
+-rl f:100 // locus (gene family) per replicate
+// Subsitution rates heterogeneity parameters
+-hs ln:1.5,1
+-hl ln:1.551533,0.6931472
+-hg ln:1.5,1
+// GENERAL
+-cs 3003
+-O simpphy_p10_dl0_t0_s300/ssim_dtl_s25_f100_sites300_GTR_bl1.0_d0.0_l0.0_t0.0_gc0.0_p0.0_pop10_ms0.0_mf0.0_seed3003 // output directory
+-OM 1 // output the mappings
+-OC 1 // log the configuration file
+-OD 1 // log the configuration file
+-OP 1 // log the configuration file

@@ -1,0 +1,6 @@
+Evidence 2: duplication Actinopterygii Cite4
+
+Alignment: mafft (einsi, JTT200)
+Data model: manual (man1)
+Evol model: JTT +G (cat. 8, alpha: 1.687) + F
+PhyML, init: BioNJ, NNI & SPR, SH-aLRT

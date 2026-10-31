@@ -28,7 +28,7 @@ The default is `--repair count`, so give `--repair none` explicitly for plain Al
 
 
 
-# Reproducing the results: LDO-graph reconstruction (Algorithm 3) vs OrthoFinder: SwissTree and simphy
+# Reproducing the results: LDO-graph reconstruction (Algorithm 3) vs OrthoFinder: SwissTree, simphy and Ensembl
 
 Everything needed to reproduce the results of this work from the raw data:
 
@@ -38,61 +38,78 @@ Everything needed to reproduce the results of this work from the raw data:
   trees labelled with simphy's own events, LDO pipeline on the DNA alignments, OrthoFinder on DNA, same scoring.
 * **Ensembl Compara** gene trees (downloaded from the Ensembl REST server): LDO pipeline on the protein alignments,
   and OrthoFinder, scored against the Ensembl trees, with their "dubious" nodes read as duplications and as
-  speciations. The trees change with every Ensembl release; `ensembl/example_summary.md` is one run, not a reference.
+  speciations. The trees change with every Ensembl release; `ensembl/example_summary.md` is the run of the paper,
+  on the 158 trees of `ensembl/ens_data`.
+
+Each runner computes the two methods of the paper: LDO+check (`count+sparse+mutual+age` in the reports) and
+OrthoFinder with the patched normalisation (`pooled_fixnorm`, "pooled, patched normalisation").
 
 ## Layout
 
 ```
 setup.sh                          OrthoFinder 3 (pinned commit + opt-in patch) and one Python env; writes env/env.sh
 orthofinder_waterfall_norm.patch  opt-in OrthoFinder score-normalisation fallback
-scripts/                          all Python scripts (one copy, shared by both pipelines; common code in ldo_utils.py)
+scripts/                          all Python scripts (one copy, shared by the three pipelines; common code in ldo_utils.py)
 swisstree/reproduce.sh            SwissTree pipeline: swisstree_raw -> OUT/summary.md
+swisstree/swisstree_raw/          data: the SwissTree 2014.0 release (speciestree.nhx, ST001/ ... ST012/)
 swisstree/expected_summary.md     report of a from-scratch run (PERFAM=1)
 simphy/simphy_run.sh              simphy pipeline: simphy root folder -> OUT/summary.md, OUT/all_families.tsv
+simphy/simphy/                    data: the simphy setting folders simpphy_p10_dl0_t0_s300 ... simpphy_p10_dl5_t0_s300
 simphy/expected/                  summary.md and all_families.tsv of the full run (25 replicates)
 ensembl/ensembl_run.sh            Ensembl pipeline: downloaded trees -> OUT/summary.md
-ensembl/example_summary.md        report of a run on 158 primate gene trees (chromosome sample, --prune-taxon 9443)
+ensembl/ens_data/                 data: trees/*.json (158 primate gene trees) and compara_species_tree.nh
+ensembl/example_summary.md        report of the run on ensembl/ens_data (chromosome 21 sample, --prune-taxon 9443)
 ```
 
 ## Quick start
 
 ```bash
-# 0. software (needs git, Python >= 3.10 with venv, network access to GitHub and PyPI)
+# 0. software (needs git, Python >= 3.11 with venv, network access to GitHub and PyPI)
+#    PYTHON=python3.11 bash setup.sh env      if python3 is older than 3.11
 bash setup.sh env
 source env/env.sh
 #    simphy only: BLAST+ (blastn, makeblastdb) for OrthoFinder on DNA, e.g. apt-get install ncbi-blast+
 
-# 1. SwissTree (~20 min with 2 threads, PERFAM=1 included); swisstree_raw = the SwissTree 2014.0 ftp release
-PERFAM=1 bash swisstree/reproduce.sh swisstree_raw st_out
-cat st_out/summary.md                       # compare with swisstree/expected_summary.md
+# 1. SwissTree (~20 min with 2 threads, PERFAM=1 included); st_out must not exist yet
+PERFAM=1 bash swisstree/reproduce.sh swisstree/swisstree_raw st_out
+cat st_out/summary.md                       # compare with swisstree/expected_summary.md, eg with diff
 
 # 2. simphy (~2 h with 2 cores for the 25 replicates, per-family OrthoFinder on families 1-10)
-OF_MODES="pooled perfam perfam_fixnorm" PERFAM_FAMILIES=1-10 bash simphy/simphy_run.sh simphy sim_out
+OF_MODES="pooled pooled_fixnorm perfam perfam_fixnorm" PERFAM_FAMILIES=1-10 bash simphy/simphy_run.sh simphy/simphy sim_out
 cat sim_out/summary.md                      # compare with simphy/expected/summary.md
 
-# 3. Ensembl (needs network access to rest.ensembl.org and ftp.ensembl.org for the download)
-$PY scripts/ensembl_download.py --out ens_data --chromosome 21 --max-trees 300 --prune-taxon 9443   # primates
-bash ensembl/ensembl_run.sh ens_data ens_out
-cat ens_out/summary.md
+# 3. Ensembl (~30 min with 2 threads), on the trees of the paper
+bash ensembl/ensembl_run.sh ensembl/ens_data ens_out
+cat ens_out/summary.md                      # compare with ensembl/example_summary.md (identical)
+#    a new sample instead (needs network access to rest.ensembl.org and ftp.ensembl.org):
+#    $PY scripts/ensembl_download.py --out new_data --chromosome 21 --max-trees 300 --prune-taxon 9443
+
+# diff commands (to compare results with expected)
+diff st_out/summary.md swisstree/expected_summary.md 
+diff sim_out/summary.md simphy/expected/summary.md 
+diff ens_out/summary.md ensembl/example_summary.md
+
 ```
 
 Environment variables:
 
 | Variable | Used by | Meaning (default) |
 |---|---|---|
-| `PY`, `OF`, `MAFFT`, `MAFFT_BINARIES` | both | set by `env/env.sh`: Python, OrthoFinder, bundled MAFFT 7.511 |
-| `THREADS` | both | threads for OrthoFinder (2) |
+| `PY`, `OF`, `MAFFT`, `MAFFT_BINARIES` | all | set by `env/env.sh`: Python, OrthoFinder, bundled MAFFT 7.511 |
+| `THREADS` | all | threads for OrthoFinder (2) |
 | `PERFAM` | SwissTree | `1` = also one OrthoFinder run per family (0) |
-| `OF_MODES` | simphy | `pooled`, `perfam`, `perfam_fixnorm` (`pooled`; empty = no OrthoFinder) |
+| `OF_MODES` | simphy | `pooled`, `pooled_fixnorm`, `perfam`, `perfam_fixnorm` (`pooled pooled_fixnorm`; empty = no OrthoFinder) |
 | `PERFAM_FAMILIES`, `JOBS` | simphy | families of the per-family runs, e.g. `1-10` (all); parallel runs (2) |
-| `COUNT_AGE` | simphy | γ of the age test, run as `count+sparse+age` (1.0; empty = skip) |
+| `REPAIRS` | simphy | `ldo_builder.py --repair` settings (`none count count+sparse count+sparse+mutual`) |
+| `COUNT_AGE` | simphy | γ of the age test, also run as `count+sparse+age` and `count+sparse+mutual+age` (1.0; empty = skip) |
 | `ONLY` | simphy | regular expression on the replicate paths (all) |
 | `SPECIES_NEWICK`, `MAX_GENES` | Ensembl | Compara species tree (`DATA/compara_species_tree.nh`); larger families skipped (1500) |
 | `REPAIRS`, `COUNT_AGE` | Ensembl | as for simphy |
 | `ORTHOFINDER` | Ensembl | `1` = also run OrthoFinder, pooled, standard and patched (1) |
 
-A simphy replicate with a `done` file is skipped, so an interrupted run restarts with the same command; a replicate
-that fails is listed in `OUT/failed.txt` and the run goes on.
+A simphy replicate with a `done` file is not recomputed (only missing LDO settings and the patched pooled OrthoFinder
+analysis are added), so an interrupted run restarts with the same command; a replicate that fails is listed in
+`OUT/failed.txt` and the run goes on.
 
 ## Software
 
@@ -111,10 +128,10 @@ that fails is listed in `OUT/failed.txt` and the run goes on.
 | `ldo_utils.py` | shared functions: Newick / NHX parsing, pruning and writing, species-tree paths, JSON gene trees, FASTA and genes.tsv reading, alignment distances, precision / recall |
 | `swisstree_convert.py` | SwissTree release -> JSON trees with MAFFT alignments + species tree (`--match-gene-name`, `--min-length-frac`) |
 | `truth_from_relationships.py` | curators' ortholog pairs from `gene_relationships.txt` (ST006 truth) |
-| `simphy_prepare.py` | simphy replicate -> LCA-labelled JSON trees with alignments + OrthoFinder inputs |
+| `simphy_prepare.py` | simphy replicate -> JSON trees labelled with simphy's own events, with alignments, + OrthoFinder inputs |
 | `true_orthologs.py` | true ortholog pairs (and genes.tsv) of labelled trees |
 | `predict_ldo.py` | predicted LDO graph: closest gene of each species (`--model` poisson / kimura / p / jc) |
-| `ldo_builder.py` | Algorithm 3 with the count repair (optional `--count-age`), the sparse cut and the opt-in mutual repair (`--repair count+sparse+mutual`, not used by the runners) |
+| `ldo_builder.py` | Algorithm 3 with the checks (repairs): count (optional `--count-age`), sparse cut and mutual |
 | `evaluate_orthologs.py`, `cluster_analysis.py` | scoring of the reconstructed trees (pairs, clusters) |
 | `make_proteomes.py`, `prune_species_tree.py`, `fit_norm_params.py`, `evaluate_orthofinder.py` | OrthoFinder inputs, normalisation parameters and scoring |
 | `ensembl_download.py`, `ensembl_prepare.py` | Ensembl Compara gene trees (with alignments) and species tree -> JSON trees + species tree of the pipeline |
@@ -141,9 +158,10 @@ Curated trees, 8 families (ST001–005, ST008–010); clusters over all 9 famili
 | LDO, no repair | 0.843 / 0.999 / 0.914 | 0.726 / 0.684 |
 | LDO, count | 0.898 / 0.997 / 0.945 | 0.805 / 0.780 |
 | LDO, count+sparse | 0.947 / 0.987 / 0.967 | 0.831 / 0.818 |
-| LDO, count+sparse + age test | 0.970 / 0.982 / **0.976** | 0.820 / 0.799 |
+| LDO, count+sparse + age test | 0.970 / 0.982 / 0.976 | 0.820 / 0.799 |
+| **LDO+check** (count+sparse+mutual + age test) | 0.970 / 0.982 / **0.976** | 0.820 / 0.799 |
 | OrthoFinder, pooled | 0.991 / 0.819 / 0.897 | |
-| OrthoFinder, pooled, patched | 0.996 / 0.962 / **0.979** | |
+| **OrthoFinder**, pooled, patched | 0.996 / 0.962 / **0.979** | |
 | OrthoFinder, per family | 0.990 / 0.753 / 0.855 | |
 | OrthoFinder, per family, patched | 0.996 / 0.962 / 0.979 | |
 
@@ -154,6 +172,7 @@ removed, 75 genes; OrthoFinder on `st` only):
 |---|---|---|
 | LDO, count+sparse | 0.623 / 0.962 / 0.756 | 0.684 / 0.960 / 0.799 |
 | LDO, count+sparse + age test | 0.655 / 0.928 / 0.768 | 0.719 / 0.951 / 0.819 |
+| **LDO+check** | 0.655 / 0.928 / 0.768 | 0.719 / 0.951 / 0.819 |
 | OrthoFinder, pooled | 0.841 / 0.959 / 0.896 | |
 | OrthoFinder, pooled, patched | 0.864 / 0.935 / 0.898 | |
 
@@ -163,8 +182,11 @@ removed, 75 genes; OrthoFinder on `st` only):
 |---|---|---|---|---|---|---|
 | LDO, count+sparse | 1.000 | 0.796 | 0.507 | 0.358 | 0.323 | 0.434 |
 | LDO, count+sparse + age test | 1.000 | 0.829 | 0.595 | 0.572 | 0.427 | 0.578 |
+| **LDO+check** | 1.000 | 0.833 | 0.644 | 0.605 | 0.490 | **0.630** |
 | OrthoFinder, pooled | 0.789 | 0.759 | 0.663 | 0.554 | 0.459 | 0.582 |
+| **OrthoFinder**, pooled, patched | 0.784 | 0.758 | 0.661 | 0.554 | 0.457 | 0.580 |
 
-Per-family averages (precision / recall), all settings: LDO count+sparse 0.776 / 0.972, + age test 0.800 / 0.918,
-OrthoFinder pooled 0.860 / 0.702. (Truth: simphy's own events. With the LCA-mapping truth of earlier versions, the
-"All" F1 were 0.505, 0.646 and 0.659.)
+Per-family averages (precision / recall / F1), all settings: LDO count+sparse 0.776 / 0.972 / 0.822, + age test
+0.800 / 0.918 / 0.826, LDO+check 0.805 / 0.910 / 0.829; OrthoFinder pooled 0.860 / 0.702 / 0.714, patched
+0.860 / 0.702 / 0.714. (Truth: simphy's own events. With the LCA-mapping truth of earlier versions, the "All" F1
+were 0.505, 0.646, 0.687 (LDO+check) and 0.659.)

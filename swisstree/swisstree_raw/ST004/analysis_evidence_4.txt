@@ -1,0 +1,4 @@
+Maximum likelihood phylogeny of selected plant serine incorporators; orthologs to Arabidopsis SERC1/SERC2 genes; significant node support with aLRT-SH could only be achieved by analyzing a subdataset. Phylogenetic analysis: PhyML with the substitution model WAG, a discrete gamma model with 8 categories and the shape parameter estimated from the dataset (1.832), branch support values are calculated with aLRT non-parametric branch support based on a Shimodaira-Hasegawa-like procedure. Topology: All duplication nodes relevant to the reference tree are significantly supported.
+
+
+

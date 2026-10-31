@@ -1,0 +1,6 @@
+39 gene duplications, identifiers of duplication nodes correspond to those of the consensus tree.
+
+Unresolved nodes
+
+    The tree topology for BAM2/BAM7 is not yet resolved. The expected topology is discussed in section evidence 8.
+    No stable topology and / or significant branch support was achieved for orthologs from Chlamydomonas reinhardtii (CHLRE), Physcomitrella patens subsp. patens (PHYPA), Selaginella moellendorffii (SELMO) and Volvox carteri (VOLCA).

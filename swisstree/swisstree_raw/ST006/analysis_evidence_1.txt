@@ -1,0 +1,8 @@
+Gene synteny
+
+Relevant publications:
+
+    PMID: 16341069. The genesis and evolution of homeobox gene clusters. Garcia-Fernàndez J. Nat Rev Genet. 2005 Dec;6(12):881-92. Review.
+    PMID: 19805301. Elephant shark (Callorhinchus milii) provides insights into the evolution of Hox gene clusters in gnathostomes. Ravi V, Lam K, Tay BH, Tay A, Brenner S, Venkatesh B. Proc Natl Acad Sci U S A. 2009 Sep 22;106(38):16327-32. Epub 2009 Sep 3.
+    PMID: 19557682. The evolution and maintenance of Hox gene clusters in vertebrates and the teleost-specific genome duplication. Kuraku S, Meyer A. Int J Dev Biol. 2009;53(5-6):765-73. Review.
+    PMID: 16763668. Hox genes are not always Colinear. Monteiro AS, Ferrier DE. Int J Biol Sci. 2006;2(3):95-103. Epub 2006 May 5. Review.

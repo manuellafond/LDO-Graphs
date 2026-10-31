@@ -1,0 +1,1 @@
+BAli-Phy (--smodel LG+gamma+INV --imodel RS07)

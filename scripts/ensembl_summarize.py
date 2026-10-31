@@ -22,12 +22,13 @@ from ldo_utils import prf
 ORDER = ["none", "count", "count+sparse", "count+sparse+age", "count+sparse+mutual", "count+sparse+mutual+age"]
 NAMES = {"none": "LDO, no repair", "count": "LDO, count", "count+sparse": "LDO, count+sparse",
          "count+sparse+age": "LDO, count+sparse, age test (--count-age 1.0)",
-         "count+sparse+mutual": "LDO, count+sparse+mutual", "count+sparse+mutual+age": "LDO, count+sparse+mutual, age test",
-         "of_pooled": "OrthoFinder, pooled, true species tree", "of_pooled_fixnorm": "OrthoFinder, pooled, patched "
-         "normalisation"}
+         "count+sparse+mutual": "LDO, count+sparse+mutual",
+         "count+sparse+mutual+age": "**LDO+check** (paper): count+sparse+mutual, age test",
+         "of_pooled": "OrthoFinder, pooled, true species tree",
+         "of_pooled_fixnorm": "**OrthoFinder** (paper): pooled, patched normalisation"}
 OF_ORDER = ["of_pooled", "of_pooled_fixnorm"]
 SIZE_BINS = [(2, 10), (11, 25), (26, 50), (51, 100), (101, 200), (201, None)]   # genes per family (None = no limit)
-BIN_METHODS = ["count+sparse", "count+sparse+age", "count+sparse+mutual+age", "of_pooled"]          # methods shown by family size
+BIN_METHODS = ["count+sparse", "count+sparse+age", "count+sparse+mutual+age", "of_pooled", "of_pooled_fixnorm"]  # by family size
 
 
 # Rows of a TSV file with a header line.
@@ -51,16 +52,16 @@ def read_counts(path):
 # Pooled precision / recall / F1 and per-family average precision / recall of some families.
 #   rows   rows of a per_family.tsv of evaluate_orthologs.py
 #   keep   set of the families to count
-# Returns ("P / R / F1", "P / R"); the average leaves out families without true pairs (a family without predicted
-# pair counts as precision 1).
+# Returns ("P / R / F1", "P / R / F1"); the average leaves out families without true pairs (a family without
+# predicted pair counts as precision 1).
 def scores(rows, keep):
     sel = [r for r in rows if r["tree_id"] in keep]
     t = sum(int(r["truth_pairs"]) for r in sel)
     p = sum(int(r["pred_pairs"]) for r in sel)
     tp = sum(int(r["tp"]) for r in sel)
     pooled = "{:.3f} / {:.3f} / {:.3f}".format(*prf(t, p, tp))
-    avg = [prf(int(r["truth_pairs"]), int(r["pred_pairs"]), int(r["tp"]))[:2] for r in sel if int(r["truth_pairs"])]
-    mean = (f"{sum(x[0] for x in avg) / len(avg):.3f} / {sum(x[1] for x in avg) / len(avg):.3f}" if avg else "-")
+    avg = [prf(int(r["truth_pairs"]), int(r["pred_pairs"]), int(r["tp"])) for r in sel if int(r["truth_pairs"])]
+    mean = " / ".join(f"{sum(x[i] for x in avg) / len(avg):.3f}" for i in range(3)) if avg else "-"
     return pooled, mean
 
 
@@ -85,13 +86,14 @@ def cluster_scores(path, keep):
 #   rep    kept rows of prepare_report.tsv (tree_id, genes)
 #   dub    reading of the dubious nodes, "dup" or "spec"
 #   runs   methods with evaluation files
+#   scored families scored (at least one true pair)
 # Returns the list of Markdown lines.
-def size_table(data, rep, dub, runs):
+def size_table(data, rep, dub, runs, scored):
     methods = [m for m in BIN_METHODS if m in runs]
     L = ["| Genes per family | families | true pairs | " + " | ".join(NAMES[m] for m in methods) + " |",
          "|---|---|---|" + "---|" * len(methods)]
     for lo, hi in SIZE_BINS:
-        keep = {r["tree_id"] for r in rep if int(r["genes"]) >= lo and (hi is None or int(r["genes"]) <= hi)}
+        keep = {r["tree_id"] for r in rep if int(r["genes"]) >= lo and (hi is None or int(r["genes"]) <= hi)} & scored
         if not keep:
             continue
         n_true = sum(int(r["truth_pairs"]) for r in data[(methods[0], dub)] if r["tree_id"] in keep)
@@ -113,9 +115,18 @@ def main():
     clean = {r["tree_id"] for r in rep if int(r["dubious"]) == 0}
     S = {k: sum(int(r[k]) for r in rep) for k in ("genes", "removed_leaves", "spec", "dup", "dubious", "other",
                                                   "spec_conflict", "dubious_spec_ok")}
-    truths = [("dup", fams, f"dubious = Dup, {len(fams)} families"),
-              ("spec", fams, f"dubious = Spec, {len(fams)} families"),
-              ("dup", clean, f"no dubious node, {len(clean)} families")]
+    # Families scored: those with at least one true ortholog pair under the reading of the dubious nodes (a family
+    # without true pair has no orthology to recover; as in the paper).
+    with_pairs = {}
+    for dub in ("dup", "spec"):
+        path = os.path.join(E, f"ldo_none_{dub}.tsv")
+        if not os.path.exists(path):
+            path = next(os.path.join(E, f) for f in sorted(os.listdir(E)) if f.startswith("ldo_") and f.endswith(f"_{dub}.tsv"))
+        with_pairs[dub] = {r["tree_id"] for r in read_counts(path) if int(r["truth_pairs"]) > 0} & fams
+    sd, ss, sc = with_pairs["dup"], with_pairs["spec"], clean & with_pairs["dup"]
+    truths = [("dup", sd, f"dubious = Dup, {len(sd)} families"),
+              ("spec", ss, f"dubious = Spec, {len(ss)} families"),
+              ("dup", sc, f"no dubious node, {len(sc)} families")]
 
     L = ["# Ensembl Compara: LDO reconstruction", "",
          f"{len(fams)} families, {S['genes']} genes ({S['removed_leaves']} leaves removed: no aligned sequence or "
@@ -124,7 +135,7 @@ def main():
          f"dubious ({S['dubious_spec_ok']} of them would be valid speciations), {S['other']} other. "
          f"{len(clean)} families have no dubious node.", "",
          "Truth: the Ensembl trees. Dubious nodes read as duplications or as speciations; on the families without "
-         "dubious nodes both readings agree.", "",
+         "dubious nodes both readings agree. Scored: the families with at least one true ortholog pair.", "",
          "## Ortholog pairs, pooled (precision / recall / F1)", "",
          "| Method | " + " | ".join(t[2] for t in truths) + " |", "|---|" + "---|" * len(truths)]
     # methods with evaluation files: LDO repair settings (key = setting) and OrthoFinder variants (key = of_<variant>)
@@ -133,7 +144,7 @@ def main():
     data = {(r, d): read_counts(os.path.join(E, f"{files[r]}_{d}.tsv")) for r in runs for d in ("dup", "spec")}
     for r in runs:
         L.append(f"| {NAMES[r]} | " + " | ".join(scores(data[(r, d)], k)[0] for d, k, _ in truths) + " |")
-    L += ["", "## Ortholog pairs, average per family (precision / recall)", "",
+    L += ["", "## Ortholog pairs, average per family (precision / recall / F1)", "",
           "Families without any true ortholog pair are left out; a family without predicted pair counts as "
           "precision 1.", "",
           "| Method | " + " | ".join(t[2] for t in truths) + " |", "|---|" + "---|" * len(truths)]
@@ -142,7 +153,7 @@ def main():
     for dub, title in (("dup", "dubious = Dup"), ("spec", "dubious = Spec")):
         L += ["", f"## Ortholog pairs by family size, {title} (precision / recall / F1)", "",
               "Gene pairs pooled within each size bin (genes per family), so that no single family dominates.", ""]
-        L += size_table(data, rep, dub, runs)
+        L += size_table(data, rep, dub, runs, with_pairs[dub])
     L += ["", "## Clusters (precision / recall)", "",
           "As cluster_analysis.py, pooled; nested duplications depend on the reading of the dubious nodes.", "",
           "| Repair | " + " | ".join(t[2] for t in truths) + " |", "|---|" + "---|" * len(truths)]

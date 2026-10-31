@@ -23,7 +23,9 @@ EXCLUDE = {"curated": {"ST006"}, "st006": set()}
 
 # (row label, LDO key without the data prefix or OrthoFinder key), in report order
 LDO_RUNS = [("LDO, no repair", "none"), ("LDO, count", "count"), ("LDO, count+sparse", "count+sparse"),
-            ("LDO, count+sparse + age test (--count-age 1.0)", "count+sparse+age")]
+            ("LDO, count+sparse + age test (--count-age 1.0)", "count+sparse+age"),
+            ("LDO, count+sparse+mutual", "count+sparse+mutual"),
+            ("**LDO+check** (paper): count+sparse+mutual + age test", "count+sparse+mutual+age")]
 OF_RUNS = [("OrthoFinder, pooled, true species tree", "of_pooled"),
            ("OrthoFinder, pooled, patched normalisation", "of_pooled_fixnorm"),
            ("OrthoFinder, per family, true species tree", "of_perfam"),
@@ -83,6 +85,18 @@ def cell(d, truth):
     return " / ".join(f"{x:.3f}" for x in total(d, truth)) if d else "-"
 
 
+# Average over the families of the per-family precision / recall / F1 (families with at least one true pair; a
+# family without predicted pair counts as precision 1), as in the paper's "average per family" columns.
+#   d       per-family counts, or None
+#   truth   "curated" or "st006": the families in EXCLUDE[truth] are left out
+# Returns the table cell "P / R / F1", or "-".
+def perfam_cell(d, truth):
+    if not d:
+        return "-"
+    per = [prf(*c) for f, c in d.items() if f not in EXCLUDE.get(truth, set()) and c[0] > 0]
+    return " / ".join(f"{sum(x[i] for x in per) / len(per):.3f}" for i in range(3)) if per else "-"
+
+
 # Cluster precision and recall of a cluster_analysis.py report.
 #   path   text file with the printed output of cluster_analysis.py
 # Returns the string "precision / recall", or "-" if the file is missing or not recognised.
@@ -108,16 +122,18 @@ def main():
          "Ortholog pairs, precision / recall / F1, gene pairs pooled over the families (micro average).",
          "Truth: the curated SwissTree trees, 8 families (ST006 is scored separately below: its tree file has no "
          "event tags).",
+         "Average per family: precision / recall / F1 of each family, averaged over the 8 families.",
          "Clusters: cluster precision / recall of the reconstructed trees against the curated trees, all 9 families.",
-         "", "| Run | Curated, 8 families | Clusters P / R |", "|---|---|---|"]
+         "", "| Run | Curated, 8 families, pooled | Average per family | Clusters P / R |", "|---|---|---|---|"]
     for label, r in LDO_RUNS:
         d = read_eval(E, "ldo_base_" + r, "curated")
         if d:
-            L.append(f"| {label} | {cell(d, 'curated')} | {clusters(os.path.join(E, f'clusters_base_{r}.txt'))} |")
+            L.append(f"| {label} | {cell(d, 'curated')} | {perfam_cell(d, 'curated')} | "
+                     f"{clusters(os.path.join(E, f'clusters_base_{r}.txt'))} |")
     for label, k in OF_RUNS:
         d = read_eval(E, k, "curated")
         if d:
-            L.append(f"| {label} | {cell(d, 'curated')} | - |")
+            L.append(f"| {label} | {cell(d, 'curated')} | {perfam_cell(d, 'curated')} | - |")
 
     # ST006 table: every method against the curators' pair list, on both conversions (OrthoFinder: st only).
     rows = []
@@ -138,6 +154,7 @@ def main():
     # Per-tree table, curated truth: precision / recall of every family.
     base = [("LDO none", "ldo_base_none"), ("LDO count", "ldo_base_count"),
             ("LDO count+sparse", "ldo_base_count+sparse"), ("LDO count+sparse+age", "ldo_base_count+sparse+age"),
+            ("LDO+check", "ldo_base_count+sparse+mutual+age"),
             ("OF unpatched", "of_pooled"), ("OF patched", "of_pooled_fixnorm")]
     cols = [(c, read_eval(E, k, "curated")) for c, k in base]
     cols = [(c, d) for c, d in cols if d]

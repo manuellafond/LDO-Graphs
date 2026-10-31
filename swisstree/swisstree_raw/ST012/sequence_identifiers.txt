@@ -1,0 +1,6 @@
+Genebank accession numbers: A. mellifera fem (AAS86667) and csd (AAS86653); A. dorsata fem (ABV56232) and csd (ABW36165); A. cerana fem (ABV56230) and csd (ABV58877); B. terrestris fem (XP_003402358); N. vitripennis tra (NP_001128299).
+
+Other sequences have yet no accession number.
+
+
+

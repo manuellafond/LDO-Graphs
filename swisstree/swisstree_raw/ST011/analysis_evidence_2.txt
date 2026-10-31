@@ -1,0 +1,9 @@
+Evidence 2
+
+Significant branch support prior to the duplication event: nodes 2, 4, 10, 11, 12, 16, 17, 18, 19, 23, 24, 22, 26, 29, 31, 33, 34, 39.
+Significant branch support subsequent to the duplication event (only relevant if orthologous groups include more than one member): nodes 12, 17, 23, 31, 34, 35, 36, 38, 39.
+
+Alignment: mafft (G-INS-i, JTT200)
+Data model: manual (man2)
+Evol model: JTT + G
+RAxML: Best-scoring ML tree, model parameters optimized, branch support values from 1000 rapid bootstraps.

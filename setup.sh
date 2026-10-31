@@ -5,11 +5,23 @@
 # BLAST+ (blastn, makeblastdb) must be installed separately: OrthoFinder searches DNA with blastn.
 #
 #   bash setup.sh [ENV_DIR]          (default: ./env)
+#   PYTHON=python3.11 bash setup.sh   to choose the Python used for the environment (default python3); OrthoFinder at
+#                                    this commit needs Python >= 3.11
 # then:   source ENV_DIR/env.sh
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 ENV=$(realpath -m "${1:-$HERE/env}")
 COMMIT=c85f0034679a9812959655f1cd60c74a30597cf1      # OrthoFinder main, 2026-05-13 (reports v3.1.4.post1.dev1)
+PYTHON=${PYTHON:-python3}
+
+# OrthoFinder at this commit requires Python >= 3.11: check before cloning anything.
+if ! "$PYTHON" -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then
+  if command -v "$PYTHON" > /dev/null; then FOUND=$("$PYTHON" -V 2>&1); else FOUND="not found"; fi
+  echo "ERROR: $PYTHON: $FOUND; OrthoFinder needs Python >= 3.11." >&2
+  echo "       Install one (e.g. apt-get install python3.11 python3.11-venv, conda create -n py311 python=3.11," >&2
+  echo "       or uv python install 3.11) and run:  PYTHON=python3.11 bash setup.sh" >&2
+  exit 1
+fi
 
 mkdir -p "$ENV"
 if [ ! -d "$ENV/OrthoFinder" ]; then
@@ -23,7 +35,11 @@ if git apply --check "$HERE/orthofinder_waterfall_norm.patch" 2>/dev/null; then
 else
   git apply --reverse --check "$HERE/orthofinder_waterfall_norm.patch" && echo "patch already applied"
 fi
-python3 -m venv "$ENV/venv"
+# a venv left by an earlier run with another Python is rebuilt
+if [ -x "$ENV/venv/bin/python" ] && ! "$ENV/venv/bin/python" -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
+  echo "removing $ENV/venv (built with $("$ENV/venv/bin/python" -V 2>&1))"; rm -rf "$ENV/venv"
+fi
+"$PYTHON" -m venv "$ENV/venv"
 "$ENV/venv/bin/pip" install -q "$ENV/OrthoFinder"
 
 cd /    # not from inside the clone, whose orthofinder.py would shadow the installed package

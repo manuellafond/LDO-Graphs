@@ -1,0 +1,1 @@
+Bayesian MCMC phylogeny of chordate family members, posterior probability support values are shown for all nodes. This tree was reconstructed with MrBayes, substitution model WAG, discrete gamma model with 8 categories, 1.000.000 generations, 4 chains, 2 independent runs; a sample was taken every 100 generations from the MCMC chains after a burn-in phase of 100.000 generations.

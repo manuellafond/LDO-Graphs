@@ -1,0 +1,4 @@
+Sub-analysis Fungi (Yarrowia lipolytica) The MSA was performed with ProbCons, 3 data models constructed using GBlocks stringent, less stringent and all gaps removed. Maximum likelihood phylogeny of an increased dataset of fungal family members (PhyML with the substitution model WAG, a discrete gamma model with 8 categories and the shape parameter estimated from the dataset (0.995), non-parametric branch support values are calculated with aLRT based on a Shimodaira-Hasegawa-like procedure). Result: All fungal representatives are in agreement with the topology of the expected species tree. There is no evidence for hidden gene duplication, e.g. species with 2 gene copies. Phylogenetic tree based on the data model derived with GBlocks with less stringent parameter settings:
+
+
+

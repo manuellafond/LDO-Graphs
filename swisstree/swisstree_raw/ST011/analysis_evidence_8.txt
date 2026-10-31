@@ -1,0 +1,14 @@
+
+Evidence 8: Node 28. The first tree shows significant branch support for the dicot clade BAM2/BAM7 and clade BAM2, the second tree indicates significant support for clade BAM7.
+
+a)
+Alignment: mafft (E_INS-i, BLOSUM62)
+Data model: manual (man8)
+Evol model: LG +G(8)
+PhyML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.
+
+b)
+Alignment: mafft (E_INS-i, BLOSUM62)
+Data model: manual (man1)
+Evol model: LG +G(8)
+PhyML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.

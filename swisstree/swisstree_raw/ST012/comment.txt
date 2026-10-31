@@ -1,0 +1,5 @@
+Species codes:
+nvit = Nasonia vitripennis, amel = Apis mellifera, acer = Apis cerana, acer = Apis dorsata, hsal = Harpegnathos saltator, lhum = Linepithema humile, cflo = Camponotus floridanus, pbar = Pogonomyrmex barbatus, sinv = Solenopsis invicta, aech = Acromyrmex echinatior, acep = Atta cephalotes.
+
+Gene codes:
+Gene name abbreviations: tra = transformer, fem = feminzer, csd = complementary sex determiner.

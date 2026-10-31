@@ -1,0 +1,5 @@
+3 gene duplications
+
+    Cited1,2/Cited4
+    Cited1/Cited2
+    Cited4 Actinopterygii

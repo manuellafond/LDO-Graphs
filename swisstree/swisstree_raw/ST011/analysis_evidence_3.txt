@@ -1,0 +1,9 @@
+Evidence 3
+
+Significant branch support prior to the duplication event: nodes 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 22, 32, 34, 35, 37, 39.
+Significant branch support subsequent to the duplication event (only relevant if orthologous groups include more than one member): nodes 1, 2, 4, 5, 6, 8, 12, 17, 21, 22, 23, 38.
+
+Alignment: mafft (L-INS-i, BLOSUM62)
+Data model: manual (man1)
+Evol model: LG +G(8)
+PhyML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.

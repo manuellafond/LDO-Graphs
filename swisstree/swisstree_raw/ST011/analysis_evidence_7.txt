@@ -1,0 +1,17 @@
+Evidence 7: Gene duplication BAM56 a/b in Musa acuminata (banana) (node 37)
+
+Note: The first tree shows significant support for the gene duplication in Musa acuminata, but this branch emerges most probably incorrectly at the base of the orthologous dicots rather than at the base of the monocots. The second tree shows the expected tree topology.
+
+a)
+Alignment: mafft (E-INS-i, BLOSUM62)
+Data model: manual (man1)
+Evol model: LG +G(8)
+PhyML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.
+
+b)
+Alignment: mafft (L-INS-i, BLOSUM62)
+Data model: manual (man3)
+Evol model: LG +G
+RAxML: BioNJ initial tree, search strategy Best of NNI and SPR, SH aLRT branch support values are indicated.
+
+
